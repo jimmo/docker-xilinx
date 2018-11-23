@@ -1,47 +1,54 @@
 # xilinx-docker
 
-Dockerize Xilinx FPGA tools to allow "throw away" environment for doing CI style builds.
+Dockerize Xilinx FPGA tools to allow running ISE on modern Linux.
 
-# Running the container
-
-```bash
-docker run -t \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -e DISPLAY=$DISPLAY \
-  \
-  -v /home/tansell/.Xilinx:/home/xilinx/.Xilinx \
-  \
-  -i mithro/xilinx-ise:14.7-1015-base \
-  /bin/bash
+# Building base image
+```
+docker build -t xilinx-ise-ubuntu .
 ```
 
-# Larger Docker Containers
+# Installing ISE
+```
+xhost +
+docker run -ti -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY -v $HOME/.Xilinx:/home/xilinx/.Xilinx -v /path/to/install/files:/media/xilinx xilinx-ise-ubuntu
+/media/xilinx/xsetup
+cat > run-xilinx.sh <<EOF
+#!/bin/bash
+. /opt/Xilinx/14.7/ISE_DS/settings64.sh
+ise
+EOF
+```
 
-Add "--storage-opt dm.basesize=30G" to your /etc/default/docker file. Then stop
-docker, **remove all your docker images** and start docker again.
+# Updating the image
+```
+docker container ls -a
+docker commit <hash> xilinx-ise-ubuntu
+docker container prune
+```
+
+# Running ISE
+```
+xhost +
+docker run --network host --rm -ti -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY -v $HOME/.Xilinx:/home/xilinx/.Xilinx -v $HOME/src:/home/xilinx/src xilinx-ise-ubuntu /home/xilinx/run-xilinx.sh
+```
+
+# Note: Larger Docker Containers
+
+Add dm.basesize=30G" to your /etc/docker/daemon.json.
+
+You'll need to first remove all your docker images, stop the docker service, edit daemon.json, then start docker again.
+
+
+```
+$ sudo cat /etc/docker/daemon.json 
+{
+  "storage-opt": [ "dm.basesize=20G" ]
+}
+```
 
 This option **won't** take effect until you remove all your images and start
 again, sorry about that :(.
 
-```bash
-DOCKER_OPTS="${DOCKER_OPTS} --storage-driver=devicemapper --storage-opt dm.basesize=30G"
-```
-
-# Getting the GUI tools working
-
-Allow X connections from anywhere with `xhost +` on container.
-
-Run docker container with the following extra arguments;
- * `-v /tmp/.X11-unix:/tmp/.X11-unix` - Maps the X11 sockets into the docker container. 
- * `-e DISPLAY=$DISPLAY` - Set up the $DISPLAY environment variable.
-
-See http://fabiorehm.com/blog/2014/09/11/running-gui-apps-with-docker/
-
-# License stuff
-`-v /home/$USER/.Xilinx:/home/xilinx/.Xilinx` - Maps the Xilinx license files into the docker container.
-
- - [ ] FIXME: How to deal with docker MAC address stuff?
-
-# Mapping USB into docker
+# Note: Mapping USB into docker
 
 `--device=/dev/bus/usb/001/001`

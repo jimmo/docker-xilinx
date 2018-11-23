@@ -13,3 +13,5 @@ RUN apt-get -y install libxext6 libxtst6
 RUN adduser --disabled-password --gecos "" xilinx
 RUN mkdir /opt/Xilinx; chown xilinx:xilinx /opt/Xilinx
 USER xilinx
+SHELL ["/bin/bash"]
+WORKDIR "/home/xilinx"
