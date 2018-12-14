@@ -9,6 +9,10 @@ RUN apt-get -y install libx11-6 libglib2.0-0 libsm6 libxi6 libxrender1 libxrandr
 # These two dependencies are needed by Vivado
 RUN apt-get -y install libxext6 libxtst6
 
+# 32-bit bits
+RUN dpkg --add-architecture i386
+RUN apt install gcc-multilib
+
 # Add the Xilinx user
 RUN adduser --disabled-password --gecos "" xilinx
 RUN mkdir /opt/Xilinx; chown xilinx:xilinx /opt/Xilinx
